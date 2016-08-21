@@ -8,6 +8,14 @@ Grabs sensible defaults from the containing folder and `.gitconfig`. Make sure y
 I found Rob Wierzbowski's original code here: [https://gist.github.com/robwierzbowski/5430952/] (https://gist.github.com/robwierzbowski/5430952/)
 
 ## Usage
+You can add your GIT User ID with (replace "githubID" with your GIT Hub User ID):
+```
+    git config --gobal github.user "githubID"
+```
+then check it to see if it's set:
+
+git config github.user
+
 ```
     mkdir *ReposName*
     cd *ReposName*
