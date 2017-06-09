@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.01.01"	     # Semantic versioning, version number MAJOR.MINOR.PATCH
+VERSION="1.01.02"	     # Semantic versioning, version number MAJOR.MINOR.PATCH
 
 # https://gist.github.com/robwierzbowski/5430952/
 # Create and push to a new github repo from the command line.  
@@ -26,12 +26,11 @@ ${NOM} [-h|?] [-V] [-d DIR]
 \t\tif the directory doesn't exist it will be create
 "
 print_usage() {
-    echo -e "${HelpStr}"
-    
+    echo -e "${HelpStr}"    
 }
 
 # -[ Options ]------------------------------------------------------------------
-USER_WEB=0
+USE_WEB=''
 QUIET=0
 
 while getopts "d:h?qwV" opt; do
@@ -130,10 +129,28 @@ read -p "Repo Description (Enter to finish): " DESCRIPTION
 echo "Here we go..."
 
 # Curl some json to the github API oh damn we so fancy
-curl -u "${GITHUBUSER}" https://api.github.com/user/repos -d "{\"name\": \"${REPONAME}\", \"description\": \"${DESCRIPTION}\", \"private\": ${PRIVATE}, \"has_issues\": ${GIT_HAS_ISSUES}, \"has_downloads\": ${GIT_HAS_DOWNLOADS}, \"has_wiki\": ${GIT_HAS_WIKI}}"
+STR=$(curl -u "${GITHUBUSER}" https://api.github.com/user/repos -d "{\"name\": \"${REPONAME}\", \"description\": \"${DESCRIPTION}\", \"private\": ${PRIVATE}, \"has_issues\": ${GIT_HAS_ISSUES}, \"has_downloads\": ${GIT_HAS_DOWNLOADS}, \"has_wiki\": ${GIT_HAS_WIKI}}")
 REPORT=$?
+
+# https://developer.github.com/v3/
+# ------------------------------------------------------------------------------
+# Hmm, I got this back
+# {
+#   "message": "Bad credentials",
+#   "documentation_url": "https://developer.github.com/v3"
+# }
+# ------------------------------------------------------------------------------
+#STR=$(echo $STR | python -c "import sys, json; print json.load(sys.stdin)['name']")
+#STR=$(echo $STR | python3 -c "import sys, json; print(json.load(sys.stdin)['name'])")
+STR=$(echo $STR | sed -e 's/[{}]/''/g' -e "s/\,/\n/g" | grep message | cut -d \" -f 4)
+if [ -z "${STR}" ]; then
+    echo "Message = '$STR'"
+else
+    echo "Message is blank"
+fi
+
 if [ $REPORT -eq 0 ]; then
-   echo "${REPONAME} create successfully"
+  echo "${REPONAME} create successfully"
 else
    echo "${REPONAME} failed (${REPORT})"
    exit ${REPORT}
@@ -152,7 +169,7 @@ git commit -m "first commit"
 # Set the freshly created repo to the origin and push
 # You'll need to have added your public key to your github account
 # This is untested as I always use the SSH URI
-if [ -z $USE_WEB ]; then
+if [ -z "$USE_WEB" ]; then
     git remote add origin git@github.com:${USER:-${GITHUBUSER}}/${REPONAME:-${CURRENTDIR}}.git
 else
     git remote add origin https://github.com/:${USER:-${GITHUBUSER}}/${REPONAME:-${CURRENTDIR}}.git
